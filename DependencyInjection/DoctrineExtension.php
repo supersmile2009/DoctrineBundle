@@ -418,6 +418,20 @@ class DoctrineExtension extends AbstractDoctrineExtension
         $this->loadOrmEntityManagerMappingInformation($entityManager, $ormConfigDef, $container);
         $this->loadOrmCacheDrivers($entityManager, $container);
 
+        $enabledFilters    = [];
+        $filtersParameters = [];
+        foreach ($entityManager['filters'] as $name => $filter) {
+            $ormConfigDef->addMethodCall('addFilter', [$name, $filter['class']]);
+            if ($filter['enabled']) {
+                $enabledFilters[] = $name;
+            }
+            if (! $filter['parameters']) {
+                continue;
+            }
+
+            $filtersParameters[$name] = $filter['parameters'];
+        }
+
         if (isset($entityManager['entity_listener_resolver']) && $entityManager['entity_listener_resolver']) {
             $container->setAlias(sprintf('doctrine.orm.%s_entity_listener_resolver', $entityManager['name']), $entityManager['entity_listener_resolver']);
         } else {
@@ -487,20 +501,6 @@ class DoctrineExtension extends AbstractDoctrineExtension
             foreach ($entityManager['dql']['datetime_functions'] as $name => $function) {
                 $ormConfigDef->addMethodCall('addCustomDatetimeFunction', [$name, $function]);
             }
-        }
-
-        $enabledFilters    = [];
-        $filtersParameters = [];
-        foreach ($entityManager['filters'] as $name => $filter) {
-            $ormConfigDef->addMethodCall('addFilter', [$name, $filter['class']]);
-            if ($filter['enabled']) {
-                $enabledFilters[] = $name;
-            }
-            if (! $filter['parameters']) {
-                continue;
-            }
-
-            $filtersParameters[$name] = $filter['parameters'];
         }
 
         $managerConfiguratorName = sprintf('doctrine.orm.%s_manager_configurator', $entityManager['name']);
